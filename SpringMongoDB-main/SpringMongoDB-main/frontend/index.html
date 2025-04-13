@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jobify - Job Listing</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
+    header { background: #0077cc; color: white; padding: 1rem; text-align: center; }
+    .container { max-width: 800px; margin: auto; padding: 2rem; background: white; }
+    h2 { color: #0077cc; }
+    form input, form textarea, form button { width: 100%; padding: 0.5rem; margin: 0.5rem 0; }
+    .job-card { background: #eef; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; }
+    .search { display: flex; gap: 1rem; margin-bottom: 1rem; }
+    .search input { flex: 1; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Jobify</h1>
+  </header>
+
+  <div class="container">
+    <h2>Search Jobs</h2>
+    <div class="search">
+      <input type="text" id="searchText" placeholder="Search by keyword (e.g. Java)">
+      <button onclick="searchJobs()">Search</button>
+    </div>
+
+    <h2>Add a Job</h2>
+    <form id="jobForm">
+      <input type="text" id="profile" placeholder="Job Profile" required>
+      <textarea id="desc" placeholder="Job Description" required></textarea>
+      <input type="text" id="techs" placeholder="Technologies (comma separated)" required>
+      <button type="submit">Post Job</button>
+    </form>
+
+    <h2>All Job Posts</h2>
+    <div id="jobsContainer"></div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:8080';
+
+    async function fetchJobs() {
+      const res = await fetch(`${API_BASE}/allPosts`);
+      const jobs = await res.json();
+      renderJobs(jobs);
+    }
+
+    function renderJobs(jobs) {
+      const container = document.getElementById('jobsContainer');
+      container.innerHTML = '';
+      jobs.forEach(job => {
+        const div = document.createElement('div');
+        div.className = 'job-card';
+        div.innerHTML = `<h3>${job.profile}</h3><p>${job.desc}</p><p><b>Tech:</b> ${job.techs}</p>`;
+        container.appendChild(div);
+      });
+    }
+
+    async function searchJobs() {
+      const text = document.getElementById('searchText').value;
+      const res = await fetch(`${API_BASE}/posts/${text}`);
+      const jobs = await res.json();
+      renderJobs(jobs);
+    }
+
+    document.getElementById('jobForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const post = {
+        profile: document.getElementById('profile').value,
+        desc: document.getElementById('desc').value,
+        techs: document.getElementById('techs').value,
+      };
+
+      await fetch(`${API_BASE}/post`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(post)
+      });
+
+      fetchJobs(); // refresh list
+      document.getElementById('jobForm').reset();
+    });
+
+    // Load all jobs on startup
+    fetchJobs();
+  </script>
+</body>
+</html>
